@@ -20,8 +20,28 @@ class BotMessage(models.Model):
         PROFILE_SAVED = 2, 'Профиль сохранен'
         FILL_REQUIRED_FIELDS = 3, 'Не заполнены необходимые поля'
 
+        INVITE = 4, 'Участвуем в следующей рассылке'
+        INVITE_CONFIRMED = 5, 'Человек подтвердил участие в рассылке'
+        INVITE_DECLINED = 6, 'Человек отказался от участия в рассылке'
+
     type = models.IntegerField(choices=MessageTypes.choices, unique=True, primary_key=True)
     text = models.TextField()
 
     def __str__(self):
         return self.MessageTypes.choices[self.type][1]
+
+
+class InviteIntent(models.Model):
+    date = models.DateField()
+    person = models.ForeignKey(Person, to_field='tg_id', on_delete=models.CASCADE)
+
+    is_message_send = models.BooleanField(default=False)
+    is_user_agreed = models.BooleanField(default=False)
+
+    is_deleted = models.BooleanField(default=False)
+
+    class Meta:
+        unique_together = ['date', 'person']
+
+    def __str__(self):
+        return f"{self.date} - {self.person_id}"

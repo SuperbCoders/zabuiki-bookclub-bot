@@ -8,6 +8,9 @@ class Command(BaseCommand):
         BotMessage.MessageTypes.UPDATE_REGISTRATION: 'Обновить данные профиля',
         BotMessage.MessageTypes.PROFILE_SAVED: 'Ваш профиль сохранен',
         BotMessage.MessageTypes.FILL_REQUIRED_FIELDS: 'Город должен быть обязательно заполнен',
+        BotMessage.MessageTypes.INVITE: 'Участвуете во встрече на следующей неделе?',
+        BotMessage.MessageTypes.INVITE_CONFIRMED: 'Вы участвуете в составлении пар на следующую неделю',
+        BotMessage.MessageTypes.INVITE_DECLINED: 'Вы отказались от встречи на следующую неделю',
     }
 
     def handle(self, *args, **options):

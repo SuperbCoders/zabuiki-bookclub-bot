@@ -40,7 +40,18 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     'bookclub_bot',
+    'django_celery_beat',
+    'django_celery_results',
 ]
+
+
+CELERY_BROKER_URL = 'redis://localhost:6379/0'
+CELERY_RESULT_BACKEND = 'django-db'
+CELERY_CACHE_BACKEND = 'django-cache'
+CELERY_IMPORTS = [
+    'bookclub_bot.tasks'
+]
+
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -118,3 +129,5 @@ LOGGING = {
 
 
 STATIC_URL = '/static/'
+
+USE_TZ = True

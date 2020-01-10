@@ -3,10 +3,13 @@ from collections import OrderedDict
 from telegram import ReplyKeyboardMarkup
 from telegram.ext import ConversationHandler, CommandHandler, MessageHandler, Filters
 
-from bookclub_bot.models import BotMessage, Person
+from bookclub_bot.models import BotMessage, Person, InviteIntent
+
+#
+# User registration
+#
 
 CHOOSING, TYPING_REPLY = range(2)
-
 PERSON_PROPERTY_MAPPINGS = OrderedDict(
     (("Имя", "username"), ("Город", "city"), ("О себе", "about"), ("Социальные сети", "social_networks"),)
 )
@@ -103,3 +106,25 @@ reg_conv_handler = ConversationHandler(
     },
     fallbacks=[MessageHandler(Filters.regex(f"^{DONE_WORD}"), done)],
 )
+
+#
+# Invite intent handling
+#
+
+
+def set_invite_intent(update, context):
+    q = InviteIntent.objects.filter(
+        person_id=update.effective_user.id,
+        is_deleted=False,
+    )
+    if update.message.text == 'Участвую':
+        q.update(is_user_agreed=True)
+        reply_text = BotMessage.objects.get(type=BotMessage.MessageTypes.INVITE_CONFIRMED).text
+    else:
+        q.update(is_user_agreed=False)
+        reply_text = BotMessage.objects.get(type=BotMessage.MessageTypes.INVITE_DECLINED).text
+
+    update.message.reply_text(reply_text)
+
+
+invite_intent_handler = MessageHandler(Filters.regex(f"^(Участвую|Не участвую)$"), set_invite_intent)
