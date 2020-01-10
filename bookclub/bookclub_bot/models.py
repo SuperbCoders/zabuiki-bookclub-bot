@@ -2,7 +2,7 @@ from django.db import models
 
 
 class Person(models.Model):
-    tg_id = models.CharField(max_length=255, null=False, unique=True)
+    tg_id = models.IntegerField(null=False, unique=True)
     username = models.CharField(max_length=255)
     city = models.CharField(max_length=255)
     about = models.TextField()

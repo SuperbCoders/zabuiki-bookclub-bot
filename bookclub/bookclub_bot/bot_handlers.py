@@ -31,14 +31,19 @@ def facts_to_str(user_obj):
 
 
 def start(update, context):
-    user, created = Person.objects.get_or_create(tg_id=update.effective_user.id)
+    user, created = Person.objects.get_or_create(
+        tg_id=update.effective_user.id,
+    )
 
     if not created:
         greeting_text = BotMessage.objects.get(type=BotMessage.MessageTypes.UPDATE_REGISTRATION).text
-        greeting_text += facts_to_str(user)
     else:
         greeting_text = BotMessage.objects.get(type=BotMessage.MessageTypes.GREETING).text
 
+        user.username = update.effective_user.first_name
+        user.save()
+
+    greeting_text += facts_to_str(user)
     update.message.reply_text(greeting_text, reply_markup=get_reply_keyboard())
     return CHOOSING
 
