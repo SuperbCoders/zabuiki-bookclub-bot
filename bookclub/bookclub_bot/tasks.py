@@ -14,20 +14,17 @@ logger = get_task_logger(__name__)
 @app.task(name='create_invite_intent', autoretry_for=(Exception,), max_retries=2)
 def create_invite_intent():
     today = date.today()
-    assert today.weekday() >= 5, 'script must run at week end'
+    # assert today.weekday() >= 5, 'script must run at week end'
 
     intent_day = today + timedelta((0 - today.weekday()) % 7)  # zero for monday
 
     # disable previous intents
     prev_intent_day = intent_day - timedelta(days=7)
     (
-        InviteIntent.objects
-            .filter(
-            date=prev_intent_day,
-            is_message_send=False,
+        InviteIntent.objects.filter(
+            date__lte=prev_intent_day,
             is_deleted=False,
-        )
-            .update(is_deleted=True)
+        ).update(is_deleted=True)
     )
 
     persons = Person.objects.raw(f"""
