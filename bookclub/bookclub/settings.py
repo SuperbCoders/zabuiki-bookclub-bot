@@ -26,7 +26,7 @@ BOT_TOKEN = '908587476:AAFTBIpSlxWxVVuTdsGZklEFG8RnhrPiIQY'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['localhost']
 
 
 # Application definition
@@ -90,7 +90,7 @@ LOGGING = {
     'formatters': {
         'verbose': {
             'format':
-                '%(levelname)s|%(asctime)s|%(name)s>> %(message)s',
+                '[%(levelname)s|%(asctime)s|%(name)s] %(message)s',
         },
     },
     'handlers': {

@@ -1,0 +1,19 @@
+from django.core.management.base import BaseCommand
+from bookclub_bot.models import BotMessage
+
+
+class Command(BaseCommand):
+    DEFAULT_TEXTS = {
+        BotMessage.MessageTypes.GREETING: 'Начнем регистрацию',
+        BotMessage.MessageTypes.UPDATE_REGISTRATION: 'Обновить данные профиля',
+        BotMessage.MessageTypes.PROFILE_SAVED: 'Ваш профиль сохранен',
+        BotMessage.MessageTypes.FILL_REQUIRED_FIELDS: 'Город должен быть обязательно заполнен',
+    }
+
+    def handle(self, *args, **options):
+        for msg_type, msg_text in self.DEFAULT_TEXTS.items():
+            if not BotMessage.objects.filter(type=msg_type).exists():
+                BotMessage.objects.create(
+                    type=msg_type,
+                    text=msg_text
+                )
