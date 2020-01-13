@@ -86,7 +86,7 @@ WSGI_APPLICATION = 'bookclub.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/3.0/ref/settings/#databases
-if os.environ['ENV'] != 'dev':
+if os.environ.get('ENV') != 'dev':
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql_psycopg2',
