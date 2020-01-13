@@ -11,12 +11,22 @@ from bookclub_bot.models import Person, InviteIntent, BotMessage
 logger = get_task_logger(__name__)
 
 
+def next_weekday(d, weekday):
+    days_ahead = weekday - d.weekday()
+    if days_ahead <= 0:  # Target day already happened this week
+        days_ahead += 7
+    return d + timedelta(days_ahead)
+
+
 @app.task(name='create_invite_intent', autoretry_for=(Exception,), max_retries=2)
 def create_invite_intent():
     today = date.today()
-    # assert today.weekday() >= 5, 'script must run at week end'
 
-    intent_day = today + timedelta((0 - today.weekday()) % 7)  # zero for monday
+    # if not today.weekday() >= 5:
+    #     logger.info('Must run on weekend')
+    #     return
+
+    intent_day = next_weekday(today, 0)  # zero for monday
 
     # disable previous intents
     prev_intent_day = intent_day - timedelta(days=7)
