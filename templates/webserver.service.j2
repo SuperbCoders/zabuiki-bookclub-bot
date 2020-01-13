@@ -7,7 +7,7 @@ Type=simple
 EnvironmentFile=/etc/systemd/system/bot.env
 User=manager
 WorkingDirectory=/home/manager/zabuiki-bookclub-bot/bookclub
-ExecStart=/usr/bin/python3.6 /home/manager/zabuiki-bookclub-bot/bookclub/manage.py runserver
+ExecStart=/usr/bin/python3.6 /home/manager/zabuiki-bookclub-bot/bookclub/manage.py runserver 127.0.0.1:8000
 Restart=always
 
 [Install]

@@ -24,9 +24,9 @@ SECRET_KEY = os.environ['SECRET_KEY']
 
 BOT_TOKEN = os.environ['BOT_TOKEN']
 
-DEBUG = True
+DEBUG = os.environ.get('ENV') == 'dev'
 
-ALLOWED_HOSTS = ['localhost']
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
