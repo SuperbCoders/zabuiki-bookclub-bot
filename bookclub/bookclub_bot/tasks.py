@@ -93,7 +93,8 @@ def send_invite():
                 intent.is_message_send = True
                 intent.save()
 
-            send_cnt += len(intents)
-            logger.info(f'Send {len(intents)} invite messages')
+                send_cnt += 1
 
-        db_logger.info(f'Разослано {send_cnt} сообщений')
+            logger.info(f'Send {send_cnt} invite messages')
+
+    db_logger.info(f'Разослано {send_cnt} сообщений')
