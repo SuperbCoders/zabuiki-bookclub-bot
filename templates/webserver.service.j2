@@ -1,0 +1,14 @@
+[Unit]
+Description=BookclubBot
+After=multi-user.target
+
+[Service]
+Type=idle
+EnvironmentFile=/etc/systemd/system/bot.env
+User=manager
+WorkingDirectory=/home/manager/zabuiki-bookclub-bot/bookclub
+ExecStart=/usr/bin/python3.6 /home/manager/zabuiki-bookclub-bot/bookclub/manage.py runserver
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

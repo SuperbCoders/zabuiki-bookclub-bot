@@ -1,0 +1,49 @@
+---
+- name: cook bookclub bot
+  hosts: all
+  gather_facts: no
+
+  vars_files:
+    - secrets
+
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
+
+  tasks:
+    - name: checkout project
+      git:
+        repo: https://github.com/SuperbCoders/zabuiki-bookclub-bot.git
+        dest: "/home/manager/zabuiki-bookclub-bot"
+        force: yes
+        version: master
+
+    - name: install deps
+      pip:
+        executable: pip3.6
+        requirements: "/home/manager/zabuiki-bookclub-bot/requirements.txt"
+        extra_args: "--user"
+
+    - name: enviroment file template
+      become: true
+      template:
+        src: "bot.env.j2"
+        dest: "/etc/systemd/system/bot.env"
+
+    - name: templates
+      become: true
+      template:
+        src: "{{ item }}.service.j2"
+        dest: "/etc/systemd/system/{{ item }}.service"
+      with_items:
+        - bookclub_bot
+        - webserver
+
+    - name: service restarted
+      become: true
+      systemd:
+        state: restarted
+        daemon_reload: yes
+        name: "{{ item }}"
+      with_items:
+        - bookclub_bot
+        - webserver

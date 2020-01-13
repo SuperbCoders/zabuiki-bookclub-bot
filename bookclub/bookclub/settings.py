@@ -124,6 +124,10 @@ LOGGING = {
             'handlers': ['console'],
             'level': 'INFO',
         },
+        'telegram.bot': {
+            'handlers': ['console'],
+            'level': 'INFO',
+        }
     },
     'root': {
         'handlers': ['console'],
