@@ -1,0 +1,16 @@
+[Unit]
+Description=Celery Beat Service
+After=network.target
+
+[Service]
+Type=simple
+User=manager
+EnvironmentFile=/etc/systemd/system/bot.env
+User=manager
+WorkingDirectory=/home/manager/zabuiki-bookclub-bot/bookclub
+ExecStart=/bin/sh -c '/home/manager/.local/bin/celery worker  \
+  -A bookclub --pidfile=/var/run/celery/worker.pid \
+  --logfile=/var/log/celery/worker.log --loglevel=DEBUG'
+
+[Install]
+WantedBy=multi-user.target

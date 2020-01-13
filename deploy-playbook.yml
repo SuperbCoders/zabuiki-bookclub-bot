@@ -37,6 +37,8 @@
       with_items:
         - bookclub_bot
         - webserver
+        - celery_beat
+        - celery_worker
 
     - name: service restarted
       become: true
@@ -47,3 +49,5 @@
       with_items:
         - bookclub_bot
         - webserver
+        - celery_beat
+        - celery_worker
