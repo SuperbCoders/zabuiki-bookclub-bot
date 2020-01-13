@@ -12,8 +12,12 @@ class Command(BaseCommand):
         dp = updater.dispatcher
 
         dp.add_handler(bot_handlers.start_handler)
+        dp.add_handler(bot_handlers.help_handler)
+
         dp.add_handler(bot_handlers.reg_conv_handler)
+
         dp.add_handler(bot_handlers.invite_intent_handler)
 
         updater.start_polling()
+        print('Started')
         updater.idle()

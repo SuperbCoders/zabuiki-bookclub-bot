@@ -1,123 +1,128 @@
 from collections import OrderedDict
 
-from telegram import ReplyKeyboardMarkup
-from telegram.ext import ConversationHandler, CommandHandler, MessageHandler, Filters
+from telegram import ReplyKeyboardMarkup, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import ConversationHandler, CommandHandler, MessageHandler, Filters, CallbackQueryHandler
 
-from bookclub_bot.models import BotMessage, Person, InviteIntent
+from bookclub_bot.models import BotMessage, Person, InviteIntent, Location
 
 #
 # Start handler
 #
 
+START_REGISTER = '0'
+AVAILABLE_LOCATIONS = list(Location.objects.values_list('name', flat=True))
+
 
 def send_greeting_text(update, context):
     update.message.reply_text(
         BotMessage.objects.get(type=BotMessage.MessageTypes.USER_WELCOME).text,
+        reply_markup=InlineKeyboardMarkup([
+            [InlineKeyboardButton('Регистрация', callback_data=START_REGISTER)]
+        ])
     )
 
+
 start_handler = CommandHandler('start', send_greeting_text)
+help_handler = CommandHandler('help', send_greeting_text)
 
 
-#
-# User registration
-#
-
-CHOOSING, TYPING_REPLY = range(2)
-PERSON_PROPERTY_MAPPINGS = OrderedDict(
-    (("Имя", "username"), ("Город", "city"), ("О себе", "about"), ("Социальные сети", "social_networks"),)
-)
-DONE_WORD = "Готово"
+WAIT_FOR_NAME, WAIT_FOR_ABOUT, WAIT_FOR_SOCIAL, WAIT_FOR_CITY = range(4)
 
 
-def get_reply_keyboard():
-    verbose_names = list(PERSON_PROPERTY_MAPPINGS.keys())
-    n = 2
-    reply_keyboard = [verbose_names[i: i + n] for i in range(0, len(verbose_names), n)] + [[DONE_WORD]]
-    markup = ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True)
-    return markup
-
-
-def facts_to_str(user_obj):
-    facts = list()
-
-    for verbose_name, property in PERSON_PROPERTY_MAPPINGS.items():
-        facts.append("{} - {}".format(verbose_name, getattr(user_obj, property)))
-
-    return "\n".join(facts).join(["\n", "\n"])
-
-
-def initiate_registration(update, context):
+def register_button_and_name_handler(update, context):
+    """
+    Ask for name
+    """
     user, created = Person.objects.get_or_create(
         tg_id=update.effective_user.id,
     )
 
-    if not created:
-        greeting_text = BotMessage.objects.get(type=BotMessage.MessageTypes.UPDATE_REGISTRATION).text
-    else:
-        greeting_text = BotMessage.objects.get(type=BotMessage.MessageTypes.REG_WELCOME).text
+    ask_for_name = BotMessage.objects.get(type=BotMessage.MessageTypes.ASK_FOR_NAME)
 
-        user.username = update.effective_user.first_name
-        user.save()
-
-    greeting_text += facts_to_str(user)
-    update.message.reply_text(greeting_text, reply_markup=get_reply_keyboard())
-    return CHOOSING
-
-
-def regular_choice(update, context):
-    text = update.message.text
-    context.user_data["choice"] = PERSON_PROPERTY_MAPPINGS[text]
-    update.message.reply_text(f"Итак, {text.lower()}:")
-
-    return TYPING_REPLY
-
-
-def received_information(update, context):
-    user_data = context.user_data
-    text = update.message.text
-
-    category = user_data["choice"]
-    del user_data["choice"]
-    user = Person.objects.get(tg_id=update.effective_user.id)
-    setattr(user, category, text)
+    user.username = update.effective_user.first_name
     user.save()
 
-    update.message.reply_text(
-        "Сохранено! Ваш профиль:" "{}" "".format(facts_to_str(user)), reply_markup=get_reply_keyboard()
-    )
+    update.effective_message.reply_text(ask_for_name.text)
 
-    return CHOOSING
+    return WAIT_FOR_NAME
 
 
-def done(update, context):
+def record_name_ask_about(update, context):
+    text = update.message.text
+
     user = Person.objects.get(tg_id=update.effective_user.id)
-    if not user.city:
-        text_obj = BotMessage.objects.get(type=BotMessage.MessageTypes.FILL_REQUIRED_FIELDS)
-        update.message.reply_text(
-            f"{text_obj.text}\n {facts_to_str(user)}",
-            reply_markup=get_reply_keyboard()
-        )
+    user.username = text
+    user.save()
 
-        return CHOOSING
+    ask_for_about = BotMessage.objects.get(type=BotMessage.MessageTypes.ASK_FOR_ABOUT)
 
-    user_data = context.user_data
-    if "choice" in user_data:
-        del user_data["choice"]
+    update.message.reply_text(ask_for_about.text)
+
+    return WAIT_FOR_ABOUT
+
+
+def record_about_ask_social(update, context):
+    text = update.message.text
+
+    user = Person.objects.get(tg_id=update.effective_user.id)
+    user.about = text
+    user.save()
+
+    ask_for_social = BotMessage.objects.get(type=BotMessage.MessageTypes.ASK_FOR_SOCIAL)
+
+    update.message.reply_text(ask_for_social.text)
+
+    return WAIT_FOR_SOCIAL
+
+
+def record_social_ask_city(update, context):
+    text = update.message.text
+
+    user = Person.objects.get(tg_id=update.effective_user.id)
+    user.social_networks = text
+    user.save()
+
+    ask_for_city = BotMessage.objects.get(type=BotMessage.MessageTypes.ASK_FOR_CITY)
+    n = 3
+    packed_locations = [AVAILABLE_LOCATIONS[i:i + n] for i in range(0, len(AVAILABLE_LOCATIONS), n)]
+    markup = ReplyKeyboardMarkup(packed_locations, resize_keyboard=True, one_time_keyboard=True)
+
+    update.message.reply_text(ask_for_city.text, reply_markup=markup)
+    return WAIT_FOR_CITY
+
+
+def record_city_register_end(update, context):
+    text = update.message.text
+    location = Location.objects.filter(name=text).get()
+
+    user = Person.objects.get(tg_id=update.effective_user.id)
+    user.location = location
+    user.save()
 
     text_obj = BotMessage.objects.get(type=BotMessage.MessageTypes.PROFILE_SAVED)
     update.message.reply_text(text_obj.text)
 
-    user_data.clear()
     return ConversationHandler.END
 
 
+def try_again(update, context):
+    update.message.reply_text("Что-то пошло не так, нажмите на кнопку Регистрация снова")
+
+
 reg_conv_handler = ConversationHandler(
-    entry_points=[CommandHandler("register", initiate_registration)],
+    entry_points=[CallbackQueryHandler(register_button_and_name_handler)],
     states={
-        CHOOSING: [MessageHandler(Filters.regex(f'^({"|".join(PERSON_PROPERTY_MAPPINGS.keys())})$'), regular_choice), ],
-        TYPING_REPLY: [MessageHandler(Filters.text, received_information), ],
+        WAIT_FOR_NAME: [MessageHandler(Filters.text, record_name_ask_about)],
+        WAIT_FOR_ABOUT: [MessageHandler(Filters.text, record_about_ask_social)],
+        WAIT_FOR_SOCIAL: [MessageHandler(Filters.text, record_social_ask_city)],
+        WAIT_FOR_CITY: [
+            MessageHandler(
+                Filters.regex(f"^({'|'.join(AVAILABLE_LOCATIONS)})$"),
+                record_city_register_end
+            )
+        ],
     },
-    fallbacks=[MessageHandler(Filters.regex(f"^{DONE_WORD}"), done)],
+    fallbacks=[MessageHandler(Filters.text, try_again)],
 )
 
 #
