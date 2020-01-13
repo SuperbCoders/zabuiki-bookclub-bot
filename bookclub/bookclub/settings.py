@@ -126,7 +126,7 @@ LOGGING = {
             'formatter': 'verbose',
         },
         'db_log': {
-            'level': 'INFO',
+            'level': 'DEBUG',
             'class': 'db_logger.db_log_handler.DatabaseLogHandler'
         },
     },
@@ -135,7 +135,7 @@ LOGGING = {
             'handlers': ['console'],
             'level': 'INFO',
         },
-        'db': {
+        'db_log': {
             'handlers': ['db_log'],
             'level': 'DEBUG'
         },
