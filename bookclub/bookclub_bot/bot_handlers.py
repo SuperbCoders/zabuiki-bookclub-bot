@@ -6,6 +6,19 @@ from telegram.ext import ConversationHandler, CommandHandler, MessageHandler, Fi
 from bookclub_bot.models import BotMessage, Person, InviteIntent
 
 #
+# Start handler
+#
+
+
+def send_greeting_text(update, context):
+    update.message.reply_text(
+        BotMessage.objects.get(type=BotMessage.MessageTypes.USER_WELCOME).text,
+    )
+
+start_handler = CommandHandler('start', send_greeting_text)
+
+
+#
 # User registration
 #
 
@@ -33,7 +46,7 @@ def facts_to_str(user_obj):
     return "\n".join(facts).join(["\n", "\n"])
 
 
-def start(update, context):
+def initiate_registration(update, context):
     user, created = Person.objects.get_or_create(
         tg_id=update.effective_user.id,
     )
@@ -41,7 +54,7 @@ def start(update, context):
     if not created:
         greeting_text = BotMessage.objects.get(type=BotMessage.MessageTypes.UPDATE_REGISTRATION).text
     else:
-        greeting_text = BotMessage.objects.get(type=BotMessage.MessageTypes.GREETING).text
+        greeting_text = BotMessage.objects.get(type=BotMessage.MessageTypes.REG_WELCOME).text
 
         user.username = update.effective_user.first_name
         user.save()
@@ -99,7 +112,7 @@ def done(update, context):
 
 
 reg_conv_handler = ConversationHandler(
-    entry_points=[CommandHandler("register", start)],
+    entry_points=[CommandHandler("register", initiate_registration)],
     states={
         CHOOSING: [MessageHandler(Filters.regex(f'^({"|".join(PERSON_PROPERTY_MAPPINGS.keys())})$'), regular_choice), ],
         TYPING_REPLY: [MessageHandler(Filters.text, received_information), ],

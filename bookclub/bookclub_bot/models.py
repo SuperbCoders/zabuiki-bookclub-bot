@@ -15,7 +15,7 @@ class Person(models.Model):
 class BotMessage(models.Model):
 
     class MessageTypes(models.IntegerChoices):
-        GREETING = 0, 'Приветствие нового пользователя'
+        REG_WELCOME = 0, 'Пользователь начинает регистрацию'
         UPDATE_REGISTRATION = 1, 'Обновить данные пользователя'
         PROFILE_SAVED = 2, 'Профиль сохранен'
         FILL_REQUIRED_FIELDS = 3, 'Не заполнены необходимые поля'
@@ -23,6 +23,8 @@ class BotMessage(models.Model):
         INVITE = 4, 'Участвуем в следующей рассылке'
         INVITE_CONFIRMED = 5, 'Человек подтвердил участие в рассылке'
         INVITE_DECLINED = 6, 'Человек отказался от участия в рассылке'
+
+        USER_WELCOME = 7, 'Приветсвие пользователя'
 
     type = models.IntegerField(choices=MessageTypes.choices, unique=True, primary_key=True)
     text = models.TextField()

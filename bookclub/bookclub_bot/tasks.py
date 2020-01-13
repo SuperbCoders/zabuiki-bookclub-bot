@@ -77,3 +77,5 @@ def send_invite():
                 )
                 intent.is_message_send = True
                 intent.save()
+
+            logger.info(f'Send {len(intents)} invite messages')
