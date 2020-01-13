@@ -37,7 +37,7 @@ def create_invite_intent():
         ) AS b ON a.tg_id = b.person_id
         WHERE b.person_id IS NULL
             AND a.tg_id IS NOT NULL
-            AND a.city IS NOT NULL
+            AND a.location_id IS NOT NULL
     """)
 
     if persons:
