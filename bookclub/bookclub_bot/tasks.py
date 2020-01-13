@@ -1,3 +1,4 @@
+import logging
 from datetime import date, timedelta
 
 from celery.utils.log import get_task_logger
@@ -9,6 +10,7 @@ from bookclub_bot.bot import bot
 from bookclub_bot.models import Person, InviteIntent, BotMessage
 
 logger = get_task_logger(__name__)
+db_logger = logging.getLogger('db_log')
 
 
 def next_weekday(d, weekday):
@@ -48,6 +50,7 @@ def create_invite_intent():
         WHERE b.person_id IS NULL
             AND a.tg_id IS NOT NULL
             AND a.location_id IS NOT NULL
+            AND a.is_blocked = FALSE
     """)
 
     if persons:
@@ -57,6 +60,7 @@ def create_invite_intent():
                 for person in persons
             ])
         logger.info(f'Created {len(persons)} intents')
+        db_logger.info(f'[{intent_day}] Создано {len(persons)} запросов на встречу')
     else:
         logger.info(f'Intents already created')
 
@@ -66,6 +70,7 @@ def send_invite():
     invite_text = BotMessage.objects.get(type=BotMessage.MessageTypes.INVITE)
     markup = ReplyKeyboardMarkup([['Участвую', 'Не участвую']], resize_keyboard=True, one_time_keyboard=True)
     n = 10
+    send_cnt = 0
 
     while True:
         with transaction.atomic():
@@ -88,4 +93,7 @@ def send_invite():
                 intent.is_message_send = True
                 intent.save()
 
+            send_cnt += len(intents)
             logger.info(f'Send {len(intents)} invite messages')
+
+        db_logger.info(f'Разослано {send_cnt} сообщений')

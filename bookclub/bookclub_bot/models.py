@@ -15,6 +15,8 @@ class Person(models.Model):
     about = models.TextField()
     social_networks = models.TextField()
 
+    is_blocked = models.BooleanField(default=False)
+
     def __str__(self):
         return f"{self.tg_id} - {self.username} - {self.location}"
 
