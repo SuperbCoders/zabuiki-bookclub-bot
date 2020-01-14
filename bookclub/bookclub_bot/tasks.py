@@ -26,9 +26,9 @@ def next_weekday(d, weekday):
 def create_invite_intent():
     today = date.today()
 
-    if not today.weekday() >= 5:
-        logger.info('Must run on weekend')
-        return
+    # if not today.weekday() >= 5:
+    #     logger.info('Must run on weekend')
+    #     return
 
     intent_day = next_weekday(today, 0)  # zero for monday
 
@@ -103,9 +103,9 @@ def send_invite():
 def find_pair():
     today = date.today()
 
-    if not today.weekday() <= 1:
-        logger.info('Must run on week start')
-        return
+    # if not today.weekday() <= 1:
+    #     logger.info('Must run on week start')
+    #     return
 
     invite_intents = InviteIntent.objects.filter(
         is_deleted=False,
@@ -201,9 +201,9 @@ def send_feedback_collect():
     msg_text = BotMessage.objects.get(type=BotMessage.MessageTypes.FEEDBACK_REQUEST).text
     today = date.today()
 
-    if not today.weekday() <= 5:
-        logger.info('Must run on week end')
-        return
+    # if not today.weekday() <= 5:
+    #     logger.info('Must run on week end')
+    #     return
 
     n = 10
     send_cnt = 0
