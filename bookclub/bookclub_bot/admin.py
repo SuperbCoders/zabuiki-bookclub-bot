@@ -8,6 +8,7 @@ class PersonMeetingInline(admin.StackedInline):
     can_delete = False
     fields = ('to_person', 'rate', 'review')
     readonly_fields = ('to_person', 'rate', 'review')
+    extra = 0
 
 
 class PersonAdmin(admin.ModelAdmin):
