@@ -2,6 +2,14 @@ from django.contrib import admin
 from .models import Person, BotMessage, InviteIntent, Location, PersonMeeting
 
 
+class PersonMeetingInline(admin.StackedInline):
+    model = PersonMeeting
+    fk_name = 'from_person'
+    can_delete = False
+    fields = ('to_person', 'rate', 'review')
+    readonly_fields = ('to_person', 'rate', 'review')
+
+
 class PersonAdmin(admin.ModelAdmin):
     list_display = (
         'tg_id', 'tg_username', 'username', 'location',
@@ -10,6 +18,7 @@ class PersonAdmin(admin.ModelAdmin):
     )
     list_filter = ('is_blocked', )
     list_per_page = 15
+    inlines = [PersonMeetingInline]
 
     def good_review(self, person):
         return (
