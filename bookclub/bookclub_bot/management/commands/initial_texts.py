@@ -17,6 +17,12 @@ class Command(BaseCommand):
         BotMessage.MessageTypes.INVITE: 'Участвуете во встрече на следующей неделе?',
         BotMessage.MessageTypes.INVITE_CONFIRMED: 'Вы участвуете в составлении пар на следующую неделю',
         BotMessage.MessageTypes.INVITE_DECLINED: 'Вы отказались от встречи на следующую неделю',
+
+        BotMessage.MessageTypes.SEND_PAIR_INFO: (
+            'Вот твоя пара на этой неделе: {username} \n'
+            'О себе: {about} \n'
+            'Ссылка: {social_networks}'
+        ),
     }
 
     LOCATIONS = [

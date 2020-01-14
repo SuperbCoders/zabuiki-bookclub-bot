@@ -24,4 +24,4 @@ class StatusLog(models.Model):
 
     class Meta:
         ordering = ('-create_datetime',)
-        verbose_name_plural = verbose_name = 'Logging'
+        verbose_name_plural = verbose_name = 'Инфо о событиях'

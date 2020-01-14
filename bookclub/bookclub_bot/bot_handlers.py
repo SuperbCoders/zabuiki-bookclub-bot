@@ -6,10 +6,23 @@ from telegram.ext import ConversationHandler, CommandHandler, MessageHandler, Fi
 from bookclub_bot.models import BotMessage, Person, InviteIntent, Location
 
 #
-# Start handler
+# Common date for callbacks
 #
 
 START_REGISTER = '0'
+AGREE_TO_PARTY = 'lets_party'
+DECLINE_TO_PARTY = 'decline_party'
+
+want_to_party_keyboard = InlineKeyboardMarkup([
+    [
+        InlineKeyboardButton('Участвую', callback_data=AGREE_TO_PARTY),
+        InlineKeyboardButton('Не участвую', callback_data=DECLINE_TO_PARTY),
+    ]
+])
+#
+# Start handler
+#
+
 AVAILABLE_LOCATIONS = list(Location.objects.values_list('name', flat=True))
 
 
@@ -35,6 +48,7 @@ def register_button_and_name_handler(update, context):
     """
     user, created = Person.objects.get_or_create(
         tg_id=update.effective_user.id,
+        tg_username=update.effective_user.username,
     )
 
     ask_for_name = BotMessage.objects.get(type=BotMessage.MessageTypes.ASK_FOR_NAME)
@@ -110,7 +124,9 @@ def try_again(update, context):
 
 
 reg_conv_handler = ConversationHandler(
-    entry_points=[CallbackQueryHandler(register_button_and_name_handler)],
+    entry_points=[
+        CallbackQueryHandler(register_button_and_name_handler, pattern=f'^{START_REGISTER}$')
+    ],
     states={
         WAIT_FOR_NAME: [MessageHandler(Filters.text, record_name_ask_about)],
         WAIT_FOR_ABOUT: [MessageHandler(Filters.text, record_about_ask_social)],
@@ -135,14 +151,19 @@ def set_invite_intent(update, context):
         person_id=update.effective_user.id,
         is_deleted=False,
     )
-    if update.message.text == 'Участвую':
+
+    person = Person.objects.filter(tg_id=update.effective_user.id).get()
+    person.tg_username = update.effective_user.username
+    person.save()
+
+    if update.callback_query.data == AGREE_TO_PARTY:
         q.update(is_user_agreed=True)
         reply_text = BotMessage.objects.get(type=BotMessage.MessageTypes.INVITE_CONFIRMED).text
     else:
         q.update(is_user_agreed=False)
         reply_text = BotMessage.objects.get(type=BotMessage.MessageTypes.INVITE_DECLINED).text
 
-    update.message.reply_text(reply_text)
+    update.effective_message.reply_text(reply_text)
 
 
-invite_intent_handler = MessageHandler(Filters.regex(f"^(Участвую|Не участвую)$"), set_invite_intent)
+invite_intent_handler = CallbackQueryHandler(set_invite_intent, pattern=f'^({AGREE_TO_PARTY}|{DECLINE_TO_PARTY})$')
