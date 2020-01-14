@@ -17,6 +17,7 @@ class Command(BaseCommand):
         dp.add_handler(bot_handlers.reg_conv_handler)
 
         dp.add_handler(bot_handlers.invite_intent_handler)
+        dp.add_handler(bot_handlers.collect_feedback_conv_handler)
 
         updater.start_polling()
         print('Started')

@@ -8,7 +8,7 @@ from telegram import InlineKeyboardMarkup, InlineKeyboardButton
 
 from bookclub.celery import app
 from bookclub_bot.bot import bot
-from bookclub_bot.bot_handlers import want_to_party_keyboard
+from bookclub_bot.bot_handlers import want_to_party_keyboard, get_user_feedback_keyboard
 from bookclub_bot.models import Person, InviteIntent, BotMessage, PersonMeeting
 
 logger = get_task_logger(__name__)
@@ -173,14 +173,9 @@ def send_pair_info():
             break
 
         for pm in pm_q.all():
-            if pm.to_person.tg_username:
-                keyboard = InlineKeyboardMarkup([
-                    [InlineKeyboardButton('Написать', url=f"https://t.me/{pm.to_person.tg_username}")]
-                ])
-            else:
-                keyboard = InlineKeyboardMarkup([
-                    [InlineKeyboardButton('Найти в чате', url=f"https://t.me/")]
-                ])
+            keyboard = InlineKeyboardMarkup([
+                [InlineKeyboardButton('Написать', url=f"https://t.me/{pm.to_person.tg_username}")]
+            ])
 
             bot.send_message(
                 pm.from_person_id,
@@ -199,3 +194,40 @@ def send_pair_info():
             logger.info(f'Send {send_cnt} invite messages')
 
     db_logger.info(f'Разослано {send_cnt} уведомлений о паре')
+
+
+@app.task(name='send_feedback_collect', autoretry_for=(Exception,), max_retries=1)
+def send_feedback_collect():
+    msg_text = BotMessage.objects.get(type=BotMessage.MessageTypes.FEEDBACK_REQUEST).text
+    today = date.today()
+
+    if not today.weekday() <= 5:
+        logger.info('Must run on week end')
+        return
+
+    n = 10
+    send_cnt = 0
+
+    while True:
+        pm_q = PersonMeeting.objects.filter(
+            is_feedback_message_send=False
+        )[:n]
+
+        if not pm_q.exists():
+            break
+
+        for pm in pm_q.all():
+
+            bot.send_message(
+                pm.from_person_id,
+                msg_text,
+                reply_markup=get_user_feedback_keyboard(pm.to_person_id)
+            )
+            pm.is_feedback_message_send = True
+            pm.save()
+
+            send_cnt += 1
+
+            logger.info(f'Send {send_cnt} feedback request messages')
+
+    db_logger.info(f'Разослано {send_cnt} запросов о фидбеке')

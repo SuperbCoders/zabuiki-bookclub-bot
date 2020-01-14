@@ -1,9 +1,8 @@
-from collections import OrderedDict
-
+import telegram
 from telegram import ReplyKeyboardMarkup, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ConversationHandler, CommandHandler, MessageHandler, Filters, CallbackQueryHandler
 
-from bookclub_bot.models import BotMessage, Person, InviteIntent, Location
+from bookclub_bot.models import BotMessage, Person, InviteIntent, Location, PersonMeeting
 
 #
 # Common date for callbacks
@@ -19,6 +18,21 @@ want_to_party_keyboard = InlineKeyboardMarkup([
         InlineKeyboardButton('Не участвую', callback_data=DECLINE_TO_PARTY),
     ]
 ])
+
+FEEDBACK_GOOD = 'meet_good'
+FEEDBACK_BAD = 'meet_bad'
+FEEDBACK_NOT_MET = 'meet_not_met'
+
+
+def get_user_feedback_keyboard(user_id):
+    return InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton('Хорошо', callback_data=f'{FEEDBACK_GOOD}|{user_id}'),
+            InlineKeyboardButton('Плохо', callback_data=f'{FEEDBACK_BAD}|{user_id}'),
+        ],
+        [InlineKeyboardButton('Не встретились', callback_data=f'{FEEDBACK_NOT_MET}|{user_id}')]
+    ])
+
 #
 # Start handler
 #
@@ -37,7 +51,6 @@ def send_greeting_text(update, context):
 
 start_handler = CommandHandler('start', send_greeting_text)
 help_handler = CommandHandler('help', send_greeting_text)
-
 
 WAIT_FOR_NAME, WAIT_FOR_ABOUT, WAIT_FOR_SOCIAL, WAIT_FOR_CITY = range(4)
 
@@ -116,6 +129,12 @@ def record_city_register_end(update, context):
     text_obj = BotMessage.objects.get(type=BotMessage.MessageTypes.PROFILE_SAVED)
     update.message.reply_text(text_obj.text)
 
+    if not update.effective_user.username:
+        username_not_set_text = BotMessage.objects.get(type=BotMessage.MessageTypes.USERNAME_NOT_SET)
+        update.effective_message.reply_text(
+            username_not_set_text.text, parse_mode=telegram.ParseMode.MARKDOWN
+        )
+
     return ConversationHandler.END
 
 
@@ -141,20 +160,28 @@ reg_conv_handler = ConversationHandler(
     fallbacks=[MessageHandler(Filters.text, try_again)],
 )
 
+
 #
 # Invite intent handling
 #
 
 
 def set_invite_intent(update, context):
+    person = Person.objects.filter(tg_id=update.effective_user.id).get()
+    if not update.effective_user.username:
+        username_not_set_text = BotMessage.objects.get(type=BotMessage.MessageTypes.USERNAME_NOT_SET)
+        update.effective_message.reply_text(
+            username_not_set_text.text, parse_mode=telegram.ParseMode.MARKDOWN
+        )
+        return
+    else:
+        person.tg_username = update.effective_user.username
+        person.save()
+
     q = InviteIntent.objects.filter(
         person_id=update.effective_user.id,
         is_deleted=False,
     )
-
-    person = Person.objects.filter(tg_id=update.effective_user.id).get()
-    person.tg_username = update.effective_user.username
-    person.save()
 
     if update.callback_query.data == AGREE_TO_PARTY:
         q.update(is_user_agreed=True)
@@ -167,3 +194,65 @@ def set_invite_intent(update, context):
 
 
 invite_intent_handler = CallbackQueryHandler(set_invite_intent, pattern=f'^({AGREE_TO_PARTY}|{DECLINE_TO_PARTY})$')
+
+
+#
+# Collect feedback
+#
+
+WAIT_FOR_REASON = range(1)
+
+
+def collect_feedback_handler(update, context):
+    data, to_person_id = update.callback_query.data.split('|')
+    pm = PersonMeeting.objects.filter(
+        from_person_id=update.effective_user.id,
+        to_person_id=int(to_person_id),
+    ).get()
+
+    context.user_data['to_person_id'] = to_person_id
+
+    if data == FEEDBACK_GOOD:
+        pm.rate = PersonMeeting.MeetingRate.GOOD
+        pm.save()
+
+        reply_text = BotMessage.objects.get(type=BotMessage.MessageTypes.FEEDBACK_GOOD).text
+        update.effective_message.reply_text(reply_text)
+        return ConversationHandler.END
+
+    elif data == FEEDBACK_BAD:
+        pm.rate = PersonMeeting.MeetingRate.BAD
+        reply_text = BotMessage.objects.get(type=BotMessage.MessageTypes.FEEDBACK_BAD).text
+    else:
+        pm.rate = PersonMeeting.MeetingRate.NOT_MET
+        reply_text = BotMessage.objects.get(type=BotMessage.MessageTypes.FEEDBACK_NOT_MET).text
+
+    pm.save()
+    update.effective_message.reply_text(reply_text)
+    return WAIT_FOR_REASON
+
+
+def record_feedback_reason(update, context):
+    to_person_id = context.user_data['to_person_id']
+    pm = PersonMeeting.objects.filter(
+        from_person_id=update.effective_user.id,
+        to_person_id=int(to_person_id),
+    ).get()
+    pm.review = update.effective_message.text
+    pm.save()
+
+    reply_text = BotMessage.objects.get(type=BotMessage.MessageTypes.FEEDBACK_REASON_COLLECTED).text
+    update.effective_message.reply_text(reply_text)
+
+    return ConversationHandler.END
+
+
+collect_feedback_conv_handler = ConversationHandler(
+    entry_points=[
+        CallbackQueryHandler(collect_feedback_handler, pattern=f'^({FEEDBACK_GOOD}|{FEEDBACK_BAD}|{FEEDBACK_NOT_MET})')
+    ],
+    states={
+        WAIT_FOR_REASON: [MessageHandler(Filters.text, record_feedback_reason)],
+    },
+    fallbacks=[MessageHandler(Filters.text, try_again)],
+)

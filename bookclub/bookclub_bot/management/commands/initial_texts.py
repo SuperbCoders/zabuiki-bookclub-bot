@@ -4,6 +4,7 @@ from bookclub_bot.models import BotMessage, Location
 
 
 class Command(BaseCommand):
+
     DEFAULT_TEXTS = {
         BotMessage.MessageTypes.USER_WELCOME: 'Привет! Я бот для встреч клуба, зарегестрируйся с помощью команды',
 
@@ -22,6 +23,23 @@ class Command(BaseCommand):
             'Вот твоя пара на этой неделе: {username} \n'
             'О себе: {about} \n'
             'Ссылка: {social_networks}'
+        ),
+
+        BotMessage.MessageTypes.USERNAME_NOT_SET: (
+            'У вас не установлен username, вот '
+            '[инструкция](https://nashkomp.ru/user-name-telegram-vse-o-nastroyke-i-smene-imeni).'
+            'Без него никто не сможет вам написать'
+        ),
+
+        BotMessage.MessageTypes.FEEDBACK_REQUEST: 'Как прошла ваша встреча?',
+
+        BotMessage.MessageTypes.FEEDBACK_GOOD: 'Здорово! Ждем вас на следующей неделе',
+        BotMessage.MessageTypes.FEEDBACK_BAD: 'Ого! А что случилось?',
+        BotMessage.MessageTypes.FEEDBACK_NOT_MET: 'Ого! А что случилось?',
+
+        BotMessage.MessageTypes.FEEDBACK_REASON_COLLECTED: (
+            'Спасибо за ваш отзыв! '
+            'Ждем вас на следующей неделе, надеемся будет лучше'
         ),
     }
 

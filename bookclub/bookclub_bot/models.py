@@ -52,6 +52,15 @@ class BotMessage(models.Model):
 
         SEND_PAIR_INFO = 9, 'Информация о встрече'
 
+        USERNAME_NOT_SET = 10, 'Юзернейм не установлен'
+
+        FEEDBACK_GOOD = 11, 'Фидбек, встреча прошла хорошо'
+        FEEDBACK_BAD = 12, 'Фидбек, встреча прошла плохо'
+        FEEDBACK_NOT_MET = 13, 'Фидбек, не встретились'
+        FEEDBACK_REASON_COLLECTED = 14, 'Фидбек, отзыв собран'
+
+        FEEDBACK_REQUEST = 15, 'Фидбек, как прошло'
+
     type = models.IntegerField(choices=MessageTypes.choices, unique=True, primary_key=True)
     text = models.TextField()
 
@@ -82,12 +91,18 @@ class InviteIntent(models.Model):
 
 
 class PersonMeeting(models.Model):
+    class MeetingRate(models.IntegerChoices):
+        GOOD = 0, 'Хорошо'
+        BAD = 1, 'Плохо'
+        NOT_MET = 2, 'Не встретились'
+
     from_person = models.ForeignKey(Person, to_field='tg_id', related_name='+', on_delete=models.CASCADE)
     to_person = models.ForeignKey(Person, to_field='tg_id', related_name='+', on_delete=models.CASCADE)
 
     is_message_send = models.BooleanField(default=False)
+    is_feedback_message_send = models.BooleanField(default=False)
 
-    rate = models.IntegerField(null=True, blank=True)
+    rate = models.IntegerField(choices=MeetingRate.choices, null=True, blank=True)
     review = models.TextField(null=True, blank=True)
 
     class Meta:
