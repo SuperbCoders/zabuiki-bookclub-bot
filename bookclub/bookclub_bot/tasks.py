@@ -132,8 +132,16 @@ def find_pair():
         )
 
         if not candidates.exists():
-            db_logger.info(f'Сочетания пар закончились для {invite_intent.person}, звать в друзья некого')
-            continue
+            candidates = Person.objects.filter(
+                tg_id__in=available_persons,
+                is_blocked=False,
+            ).exclude(
+                tg_id__in=already_seen_person_ids
+            )
+
+            if not candidates.exists():
+                db_logger.info(f'Сочетания пар закончились для {invite_intent.person}, звать в друзья некого')
+                continue
 
         candidate = candidates.first()
 

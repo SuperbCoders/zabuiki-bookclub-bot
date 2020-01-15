@@ -2,6 +2,7 @@ from __future__ import unicode_literals
 import logging
 
 from django.contrib import admin
+from bookclub_bot.admin import admin_site
 from django.utils.html import format_html
 
 from .models import StatusLog
@@ -31,4 +32,4 @@ class StatusLogAdmin(admin.ModelAdmin):
     create_datetime_format.short_description = 'Create Datetime'
 
 
-admin.site.register(StatusLog, StatusLogAdmin)
+admin_site.register(StatusLog, StatusLogAdmin)

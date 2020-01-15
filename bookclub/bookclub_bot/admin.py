@@ -2,6 +2,10 @@ from django.contrib import admin
 from .models import Person, BotMessage, InviteIntent, Location, PersonMeeting
 
 
+class BookclubAdminSite(admin.AdminSite):
+    site_header = 'Книжный клуб'
+
+
 class PersonMeetingInline(admin.StackedInline):
     model = PersonMeeting
     fk_name = 'from_person'
@@ -46,8 +50,9 @@ class PersonAdmin(admin.ModelAdmin):
         )
 
 
-admin.site.register(Person, PersonAdmin)
-admin.site.register(Location)
-admin.site.register(BotMessage)
-admin.site.register(InviteIntent)
-admin.site.register(PersonMeeting)
+admin_site = BookclubAdminSite(name='bookclub_admin')
+admin_site.register(Person, PersonAdmin)
+admin_site.register(Location)
+admin_site.register(BotMessage)
+admin_site.register(InviteIntent)
+admin_site.register(PersonMeeting)
