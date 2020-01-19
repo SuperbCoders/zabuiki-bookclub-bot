@@ -40,6 +40,7 @@ INSTALLED_APPS = [
 
     'bookclub_bot',
     'bookclub_bot.apps.BookclubAdminConfig',
+
     'django_celery_beat',
     'django_celery_results',
 
@@ -163,3 +164,4 @@ STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, '..', '..', 'static')
 
 USE_TZ = True
+TIME_ZONE = 'Europe/Moscow'

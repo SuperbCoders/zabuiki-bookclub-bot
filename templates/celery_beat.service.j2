@@ -10,7 +10,7 @@ User=manager
 WorkingDirectory=/home/manager/zabuiki-bookclub-bot/bookclub
 ExecStart=/bin/sh -c '/home/manager/.local/bin/celery beat  \
   -A bookclub --pidfile=/var/run/celery/beat.pid \
-  --logfile=/var/log/celery/beat.log --loglevel=DEBUG'
+  --logfile=/var/log/celery/beat.log --loglevel=DEBUG -S django'
 
 [Install]
 WantedBy=multi-user.target
