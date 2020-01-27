@@ -158,6 +158,8 @@ reg_conv_handler = ConversationHandler(
         ],
     },
     fallbacks=[MessageHandler(Filters.text, try_again)],
+    allow_reentry=True,
+    per_chat=True,
 )
 
 
@@ -255,4 +257,6 @@ collect_feedback_conv_handler = ConversationHandler(
         WAIT_FOR_REASON: [MessageHandler(Filters.text, record_feedback_reason)],
     },
     fallbacks=[MessageHandler(Filters.text, try_again)],
+    allow_reentry=True,
+    per_chat=True,
 )
