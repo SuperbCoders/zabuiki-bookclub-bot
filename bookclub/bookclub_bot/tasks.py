@@ -5,6 +5,7 @@ import telegram
 from celery.utils.log import get_task_logger
 from django.db import transaction
 from telegram import InlineKeyboardMarkup, InlineKeyboardButton
+from telegram.error import Unauthorized
 
 from bookclub.celery import app
 from bookclub_bot.bot import bot
@@ -84,13 +85,19 @@ def send_invite():
             break
 
         for intent in intents.all():
-            bot.send_message(
-                intent.person_id,
-                invite_text.text,
-                reply_markup=want_to_party_keyboard
-            )
-            intent.is_message_send = True
-            intent.save()
+            try:
+                bot.send_message(
+                    intent.person_id,
+                    invite_text.text,
+                    reply_markup=want_to_party_keyboard
+                )
+            except Unauthorized:
+                intent.person.is_blocked = True
+                intent.person.save()
+                intent.delete()
+            else:
+                intent.is_message_send = True
+                intent.save()
 
             send_cnt += 1
 
@@ -184,18 +191,23 @@ def send_pair_info():
             keyboard = InlineKeyboardMarkup([
                 [InlineKeyboardButton('Написать', url=f"https://t.me/{pm.to_person.tg_username}")]
             ])
-
-            bot.send_message(
-                pm.from_person_id,
-                msg_template.format(
-                    username=pm.to_person.username,
-                    about=pm.to_person.about,
-                    social_networks=pm.to_person.social_networks,
-                ),
-                reply_markup=keyboard
-            )
-            pm.is_message_send = True
-            pm.save()
+            try:
+                bot.send_message(
+                    pm.from_person_id,
+                    msg_template.format(
+                        username=pm.to_person.username,
+                        about=pm.to_person.about,
+                        social_networks=pm.to_person.social_networks,
+                    ),
+                    reply_markup=keyboard
+                )
+            except Unauthorized:
+                pm.from_person.is_blocked = True
+                pm.from_person.save()
+                pm.delete()
+            else:
+                pm.is_message_send = True
+                pm.save()
 
             send_cnt += 1
 
@@ -225,12 +237,14 @@ def send_feedback_collect():
             break
 
         for pm in pm_q.all():
-
-            bot.send_message(
-                pm.from_person_id,
-                msg_text,
-                reply_markup=get_user_feedback_keyboard(pm.to_person_id)
-            )
+            try:
+                bot.send_message(
+                    pm.from_person_id,
+                    msg_text,
+                    reply_markup=get_user_feedback_keyboard(pm.to_person_id)
+                )
+            except Unauthorized:
+                pass
             pm.is_feedback_message_send = True
             pm.save()
 
