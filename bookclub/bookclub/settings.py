@@ -24,7 +24,7 @@ SECRET_KEY = os.environ['SECRET_KEY']
 
 BOT_TOKEN = os.environ['BOT_TOKEN']
 
-DEBUG = os.environ.get('ENV') == 'dev'
+DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
@@ -48,7 +48,7 @@ INSTALLED_APPS = [
 ]
 
 
-CELERY_BROKER_URL = 'redis://localhost:6379/0'
+CELERY_BROKER_URL = 'redis://redis:6379/0'
 CELERY_RESULT_BACKEND = 'django-db'
 CELERY_CACHE_BACKEND = 'django-cache'
 CELERY_IMPORTS = [
@@ -96,7 +96,7 @@ if os.environ.get('ENV') != 'dev':
             'NAME': os.environ['DB_NAME'],
             'USER': os.environ['DB_USER'],
             'PASSWORD': os.environ['DB_PASSWORD'],
-            'HOST': 'localhost',
+            'HOST': os.environ['DB_HOST'],
             'PORT': 5432
         }
     }
@@ -161,7 +161,7 @@ LOGGING = {
 
 
 STATIC_URL = '/static/'
-STATIC_ROOT = os.path.join(BASE_DIR, '..', '..', 'static')
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 
 USE_TZ = True
 TIME_ZONE = 'Europe/Moscow'

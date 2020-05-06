@@ -3,3 +3,4 @@ python-telegram-bot==12.2.0
 celery[redis]
 django-celery-results
 django-celery-beat
+psycopg2-binary

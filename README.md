@@ -14,5 +14,6 @@
 
 ## Деплой
 
-Деплой ansible'ом (deploy-playbook.yml), с использованием ansible-vault (secrets). На целевой машине нужен postgres и redis.
-Разворачиваются демоны для celery, вебсервер и демон бота.
+* сделать manage.py migrate
+* положить файл .env с паролями и токенами
+* сделать docker-compose up
