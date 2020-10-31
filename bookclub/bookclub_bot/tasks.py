@@ -1,7 +1,6 @@
 import logging
 from datetime import date, timedelta
 
-import telegram
 from celery.utils.log import get_task_logger
 from django.db import transaction
 from telegram import InlineKeyboardMarkup, InlineKeyboardButton
@@ -24,14 +23,14 @@ def next_weekday(d, weekday):
 
 
 @app.task(name='create_invite_intent', autoretry_for=(Exception,), max_retries=2)
-def create_invite_intent():
+def create_invite_intent(weekday = 0):
     today = date.today()
 
     # if not today.weekday() >= 5:
     #     logger.info('Must run on weekend')
     #     return
 
-    intent_day = next_weekday(today, 0)  # zero for monday
+    intent_day = next_weekday(today, weekday)  # zero for monday
 
     # disable previous intents
     prev_intent_day = intent_day - timedelta(days=7)
@@ -66,6 +65,8 @@ def create_invite_intent():
         db_logger.info(f'[{intent_day}] Создано {len(persons)} запросов на встречу')
     else:
         logger.info(f'Intents already created')
+        pass
+    pass
 
 
 @app.task(name='send_invite', autoretry_for=(Exception,), max_retries=1)
@@ -100,10 +101,13 @@ def send_invite():
                 intent.save()
 
             send_cnt += 1
+            pass
 
         logger.info(f'Send {send_cnt} invite messages')
+        pass
 
     db_logger.info(f'Разослано {send_cnt} сообщений')
+    pass
 
 
 @app.task(name='find_pair', autoretry_for=(Exception,), max_retries=1)
@@ -169,7 +173,13 @@ def find_pair():
 
         cnt += 1
 
+    if cnt == 0 or len(invite_intents) == 0:
+        InviteIntent.objects.all().delete()
+        PersonMeeting.objects.all().delete()
+        return
+
     db_logger.info(f'Составлено {cnt} пар')
+    pass
 
 
 @app.task(name='send_pair_info', autoretry_for=(Exception,), max_retries=1)
