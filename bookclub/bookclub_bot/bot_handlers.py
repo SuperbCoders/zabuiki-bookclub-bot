@@ -37,6 +37,7 @@ def get_user_feedback_keyboard(user_id):
 # Start handler
 #
 
+
 AVAILABLE_LOCATIONS = list(Location.objects.values_list('name', flat=True))
 
 
@@ -47,9 +48,25 @@ def send_greeting_text(update, context):
             [InlineKeyboardButton('Регистрация', callback_data=START_REGISTER)]
         ])
     )
+    pass
+
+
+def kick_chat_memmber(update, context):
+    from bookclub_bot.bot import bot
+    message: str = update.effective_message['text']
+    chat_id = update.effective_chat['id']
+    member_user_id = int(message[message.rfind(' '):])
+
+    print(member_user_id)
+
+    if member_user_id > 0:
+        bot.kick_chat_member(chat_id = chat_id, user_id = member_user_id)
+    bot.delete_message(chat_id, update.effective_message['message_id'])
+    pass
 
 
 start_handler = CommandHandler('start', send_greeting_text)
+kick_handler = CommandHandler('kick', kick_chat_memmber)
 help_handler = CommandHandler('help', send_greeting_text)
 
 WAIT_FOR_NAME, WAIT_FOR_ABOUT, WAIT_FOR_SOCIAL, WAIT_FOR_CITY = range(4)

@@ -1,6 +1,6 @@
 django==3.0.2
-python-telegram-bot==12.2.0
-celery[redis]
-django-celery-results
+python-telegram-bot==12.8
+celery[redis]==4.4.7
+django-celery-results==1.2.1
 django-celery-beat
 psycopg2-binary
