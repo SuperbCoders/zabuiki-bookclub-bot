@@ -7,23 +7,23 @@ from bookclub_bot.bot import bot
 
 
 def create(update, context):
-    from bookclub_bot.tasks import create_invite_intent
-    print('CREATE')
-    create_invite_intent()
+    from bookclub_bot import tasks
+    task_result = tasks.create_invite_intent()
+    update.message.reply_text("create_invite_intent: " + task_result)
     pass
 
 
 def send_invite(update, context):
     from bookclub_bot import tasks
-    print('SEND')
-    tasks.send_invite()
+    task_result = tasks.send_invite()
+    update.message.reply_text("send_invite: " + task_result)
     pass
 
 
 def findpair(update, context):
     from bookclub_bot import tasks
-    print('PAIR')
-    tasks.find_pair()
+    task_result = tasks.find_pair()
+    update.message.reply_text("find_pair: " + task_result)
     pass
 
 
