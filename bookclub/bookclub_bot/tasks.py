@@ -98,6 +98,9 @@ def send_invite():
                 intent.person.save()
                 intent.delete()
                 logger.error(f'Invite message wasn\'t sent for {intent.person.username}\tReason: {ue}')
+            except Exception as e:
+                logger.error(f'Exception reason: {e}')
+                pass
             else:
                 intent.is_message_send = True
                 intent.save()
