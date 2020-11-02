@@ -88,17 +88,23 @@ def send_invite():
         for intent in intents.all():
             try:
                 bot.send_message(
-                    intent.person_id,
+                    intent.person.tg_id,
                     invite_text.text,
                     reply_markup=want_to_party_keyboard
                 )
-            except Unauthorized:
+            except Unauthorized as ue:
                 intent.person.is_blocked = True
                 intent.person.save()
                 intent.delete()
+                logger.error(f'Invite message wasn\'t sent for {intent.person.username}\tReason: {ue}')
+            except Exception as e:
+                logger.error(f'Exception reason: {e}')
+                pass
             else:
                 intent.is_message_send = True
                 intent.save()
+                logger.info(f'Successfully sent invite message for {intent.person.username}')
+                pass
 
             send_cnt += 1
             pass
@@ -112,7 +118,7 @@ def send_invite():
 
 @app.task(name='find_pair', autoretry_for=(Exception,), max_retries=1)
 def find_pair():
-    today = date.today()
+    # today = date.today()
 
     # if not today.weekday() <= 1:
     #     logger.info('Must run on week start')
@@ -173,7 +179,7 @@ def find_pair():
 
         cnt += 1
 
-    if cnt == 0 or len(invite_intents) == 0:
+    if cnt == 0 and len(invite_intents) == 0:
         InviteIntent.objects.all().delete()
         PersonMeeting.objects.all().delete()
         return
