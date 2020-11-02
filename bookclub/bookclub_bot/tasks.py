@@ -66,6 +66,7 @@ def create_invite_intent(weekday = 0):
     else:
         logger.info(f'Intents already created')
         pass
+    return f'[{intent_day}] Создано {len(persons)} запросов на встречу'
     pass
 
 
@@ -109,10 +110,11 @@ def send_invite():
             send_cnt += 1
             pass
 
-        logger.info(f'Send {send_cnt} invite messages')
+        logger.info(f'Have sent {send_cnt} invite messages')
         pass
 
     db_logger.info(f'Разослано {send_cnt} сообщений')
+    return f'Разослано {send_cnt} сообщений'
     pass
 
 
@@ -185,6 +187,7 @@ def find_pair():
         return
 
     db_logger.info(f'Составлено {cnt} пар')
+    return f'Составлено {cnt} пар'
     pass
 
 
