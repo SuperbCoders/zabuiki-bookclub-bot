@@ -116,7 +116,6 @@ def send_invite():
 
     db_logger.info(f'Разослано {send_cnt} сообщений')
     return f'Разослано {send_cnt} сообщений'
-    pass
 
 
 @app.task(name='find_pair', autoretry_for=(Exception,), max_retries=1)
@@ -127,11 +126,7 @@ def find_pair():
     #     logger.info('Must run on week start')
     #     return
 
-    invite_intents = InviteIntent.objects.filter(
-        is_deleted=False,
-        is_user_agreed=True,
-        person_meeting__isnull=True,
-    )
+    invite_intents = InviteIntent.objects.filter(is_deleted=False, is_user_agreed=True, person_meeting__isnull=True)
 
     cnt = 0
     for invite_intent in invite_intents.all():
@@ -182,14 +177,8 @@ def find_pair():
 
         cnt += 1
 
-    if cnt == 0 and len(invite_intents) == 0:
-        InviteIntent.objects.all().delete()
-        PersonMeeting.objects.all().delete()
-        return
-
     db_logger.info(f'Составлено {cnt} пар')
     return f'Составлено {cnt} пар'
-    pass
 
 
 @app.task(name='send_pair_info', autoretry_for=(Exception,), max_retries=1)
@@ -273,3 +262,31 @@ def send_feedback_collect():
             logger.info(f'Send {send_cnt} feedback request messages')
 
     db_logger.info(f'Разослано {send_cnt} запросов о фидбеке')
+
+
+@app.task(name='send_feedback_collect', autoretry_for=(Exception,), max_retries=1)
+def update_meeting_schedule():
+    # check if there any not send invites
+    invite_intents = InviteIntent.objects.filter(
+        is_deleted=False,
+        is_message_send=False,
+        person_meeting__isnull=True
+    )
+
+    if invite_intents:
+        logger.info(f'No need to update db. Not sent invite intents count: {len(invite_intents)}')
+        return False
+
+    # check if all planned meetings have taken place
+    pms = PersonMeeting.objects.filter(
+        is_message_send=False,
+        is_feedback_message_send=False
+    )
+
+    if pms:
+        logger.info(f'No need to update db. Not finished meetings count: {len(pms.all())}')
+        return False
+
+    PersonMeeting.objects.all().delete()
+    logger.info('Data about meetings and invites succesfully cleared')
+    pass
