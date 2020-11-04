@@ -66,7 +66,7 @@ def create_invite_intent(weekday = 0):
     else:
         logger.info(f'Intents already created')
         pass
-    pass
+    return f'[{intent_day}] Создано {len(persons)} запросов на встречу'
 
 
 @app.task(name='send_invite', autoretry_for=(Exception,), max_retries=1)
@@ -88,31 +88,38 @@ def send_invite():
         for intent in intents.all():
             try:
                 bot.send_message(
-                    intent.person_id,
+                    intent.person.tg_id,
                     invite_text.text,
                     reply_markup=want_to_party_keyboard
                 )
-            except Unauthorized:
+            except Unauthorized as ue:
                 intent.person.is_blocked = True
                 intent.person.save()
                 intent.delete()
+                logger.error(f'Invite message wasn\'t sent for {intent.person.username}\tReason: {ue}')
+            except Exception as e:
+                logger.error(f'Exception for {intent.person.username} reason: {e}')
+                continue
+                pass
             else:
                 intent.is_message_send = True
                 intent.save()
+                logger.info(f'Successfully sent invite message for {intent.person.username}')
+                pass
 
             send_cnt += 1
             pass
 
-        logger.info(f'Send {send_cnt} invite messages')
+        logger.info(f'Have sent {send_cnt} invite messages')
         pass
 
     db_logger.info(f'Разослано {send_cnt} сообщений')
-    pass
+    return f'Разослано {send_cnt} сообщений'
 
 
 @app.task(name='find_pair', autoretry_for=(Exception,), max_retries=1)
 def find_pair():
-    today = date.today()
+    # today = date.today()
 
     # if not today.weekday() <= 1:
     #     logger.info('Must run on week start')
@@ -121,7 +128,7 @@ def find_pair():
     invite_intents = InviteIntent.objects.filter(
         is_deleted=False,
         is_user_agreed=True,
-        person_meeting__isnull=True,
+        person_meeting__isnull=True
     )
 
     cnt = 0
@@ -173,13 +180,8 @@ def find_pair():
 
         cnt += 1
 
-    if cnt == 0 or len(invite_intents) == 0:
-        InviteIntent.objects.all().delete()
-        PersonMeeting.objects.all().delete()
-        return
-
     db_logger.info(f'Составлено {cnt} пар')
-    pass
+    return f'Составлено {cnt} пар'
 
 
 @app.task(name='send_pair_info', autoretry_for=(Exception,), max_retries=1)
@@ -263,3 +265,31 @@ def send_feedback_collect():
             logger.info(f'Send {send_cnt} feedback request messages')
 
     db_logger.info(f'Разослано {send_cnt} запросов о фидбеке')
+
+
+@app.task(name='send_feedback_collect', autoretry_for=(Exception,), max_retries=1)
+def update_meeting_schedule():
+    # check if there any not send invites
+    invite_intents = InviteIntent.objects.filter(
+        is_deleted=False,
+        is_message_send=False,
+        person_meeting__isnull=True
+    )
+
+    if invite_intents:
+        logger.info(f'No need to update db. Not sent invite intents count: {len(invite_intents)}')
+        return False
+
+    # check if all planned meetings have taken place
+    pms = PersonMeeting.objects.filter(
+        is_message_send=False,
+        is_feedback_message_send=False
+    )
+
+    if pms:
+        logger.info(f'No need to update db. Not finished meetings count: {len(pms.all())}')
+        return False
+
+    PersonMeeting.objects.all().delete()
+    logger.info('Data about meetings and invites succesfully cleared')
+    pass
