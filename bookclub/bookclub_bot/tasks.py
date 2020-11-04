@@ -267,7 +267,7 @@ def send_feedback_collect():
     db_logger.info(f'Разослано {send_cnt} запросов о фидбеке')
 
 
-@app.task(name='send_feedback_collect', autoretry_for=(Exception,), max_retries=1)
+@app.task(name='update_meeting_schedule', autoretry_for=(Exception,), max_retries=1)
 def update_meeting_schedule():
     # check if there any not send invites
     invite_intents = InviteIntent.objects.filter(
