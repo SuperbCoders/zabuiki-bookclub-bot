@@ -125,7 +125,11 @@ def find_pair():
     #     logger.info('Must run on week start')
     #     return
 
-    invite_intents = InviteIntent.objects.filter(is_deleted=False, is_user_agreed=True, person_meeting__isnull=True)
+    invite_intents = InviteIntent.objects.filter(
+        is_deleted=False,
+        is_user_agreed=True,
+        person_meeting__isnull=True
+    )
 
     cnt = 0
     for invite_intent in invite_intents.all():
