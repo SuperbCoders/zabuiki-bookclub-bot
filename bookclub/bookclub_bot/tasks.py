@@ -67,7 +67,6 @@ def create_invite_intent(weekday = 0):
         logger.info(f'Intents already created')
         pass
     return f'[{intent_day}] Создано {len(persons)} запросов на встречу'
-    pass
 
 
 @app.task(name='send_invite', autoretry_for=(Exception,), max_retries=1)
