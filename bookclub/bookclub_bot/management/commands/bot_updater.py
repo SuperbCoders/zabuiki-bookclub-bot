@@ -20,6 +20,12 @@ def send_invite(update, context):
     pass
 
 
+def update_meeting(update, context):
+    from bookclub_bot import tasks
+    task_result = tasks.update_meeting_schedule()
+    update.message.reply_text("update_meeting_schedule: ", task_result)
+    pass
+
 def findpair(update, context):
     from bookclub_bot import tasks
     task_result = tasks.find_pair()
@@ -28,6 +34,7 @@ def findpair(update, context):
 
 
 create_handler = ext.CommandHandler('create', create)
+update_handler = ext.CommandHandler('update', update_meeting)
 send_handler = ext.CommandHandler('send', send_invite)
 pair_handler = ext.CommandHandler('pair', findpair)
 
@@ -49,6 +56,7 @@ class Command(BaseCommand):
 
         if settings.DEBUG:
             dp.add_handler(create_handler)
+            dp.add_handler(update_handler)
             dp.add_handler(send_handler)
             dp.add_handler(pair_handler)
 

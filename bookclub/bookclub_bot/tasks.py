@@ -270,26 +270,30 @@ def send_feedback_collect():
 @app.task(name='update_meeting_schedule', autoretry_for=(Exception,), max_retries=1)
 def update_meeting_schedule():
     # check if there any not send invites
+    res = ""
     invite_intents = InviteIntent.objects.filter(
         is_deleted=False,
         is_message_send=False,
         person_meeting__isnull=True
-    )
+    ).all()
 
-    if invite_intents:
-        logger.info(f'No need to update db. Not sent invite intents count: {len(invite_intents)}')
-        return False
+    if not invite_intents.exists():
+        res = f'No need to update db. Not sent invite intents count: {len(invite_intents)}'
+        logger.info(res)
+        return res
 
     # check if all planned meetings have taken place
     pms = PersonMeeting.objects.filter(
         is_message_send=False,
         is_feedback_message_send=False
-    )
+    ).all()
 
-    if pms:
-        logger.info(f'No need to update db. Not finished meetings count: {len(pms.all())}')
-        return False
+    if not pms.exists():
+        res = f'No need to update db. Not finished meetings count: {len(pms.all())}'
+        logger.info(res)
+        return res
 
     PersonMeeting.objects.all().delete()
-    logger.info('Data about meetings and invites succesfully cleared')
-    pass
+    res = 'Data about meetings and invites succesfully cleared'
+    logger.info(res)
+    return res
