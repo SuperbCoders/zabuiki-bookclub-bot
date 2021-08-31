@@ -277,7 +277,7 @@ def update_meeting_schedule():
         person_meeting__isnull=True
     ).all()
 
-    if not invite_intents.exists():
+    if invite_intents.exists():
         res = f'No need to update db. Not sent invite intents count: {len(invite_intents)}'
         logger.info(res)
         return res
@@ -288,7 +288,7 @@ def update_meeting_schedule():
         is_feedback_message_send=False
     ).all()
 
-    if not pms.exists():
+    if pms.exists():
         res = f'No need to update db. Not finished meetings count: {len(pms.all())}'
         logger.info(res)
         return res
