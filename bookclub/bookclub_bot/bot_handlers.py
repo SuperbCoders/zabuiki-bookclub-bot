@@ -1,8 +1,26 @@
 import telegram
-from telegram import ReplyKeyboardMarkup, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import ConversationHandler, CommandHandler, MessageHandler, Filters, CallbackQueryHandler
+from telegram import (
+    ReplyKeyboardMarkup,
+    InlineKeyboardButton,
+    InlineKeyboardMarkup
+)
+from telegram.ext import (
+    CallbackQueryHandler,
+    ConversationHandler,
+    CommandHandler,
+    Filters,
+    MessageHandler
+)
 
-from bookclub_bot.models import BotMessage, Person, InviteIntent, Location, PersonMeeting
+from bookclub_bot.models import (
+    BotMessage,
+    InviteIntent,
+    Location,
+    Person,
+    PersonMeeting
+)
+
+from bookclub_bot.utils import handle_failure
 
 #
 # Common date for callbacks
@@ -24,6 +42,7 @@ FEEDBACK_BAD = 'meet_bad'
 FEEDBACK_NOT_MET = 'meet_not_met'
 
 
+@handle_failure()
 def get_user_feedback_keyboard(user_id):
     return InlineKeyboardMarkup([
         [
@@ -33,6 +52,7 @@ def get_user_feedback_keyboard(user_id):
         [InlineKeyboardButton('Не встретились', callback_data=f'{FEEDBACK_NOT_MET}|{user_id}')]
     ])
 
+
 #
 # Start handler
 #
@@ -41,7 +61,8 @@ def get_user_feedback_keyboard(user_id):
 AVAILABLE_LOCATIONS = list(Location.objects.values_list('name', flat=True))
 
 
-def send_greeting_text(update, context):
+@handle_failure()
+def send_greeting_text(update):
     update.message.reply_text(
         BotMessage.objects.get(type=BotMessage.MessageTypes.USER_WELCOME).text,
         reply_markup=InlineKeyboardMarkup([
@@ -51,7 +72,8 @@ def send_greeting_text(update, context):
     pass
 
 
-def kick_chat_memmber(update, context):
+@handle_failure()
+def kick_chat_member(update):
     from bookclub_bot.bot import bot
     message: str = update.effective_message['text']
     chat_id = update.effective_chat['id']
@@ -60,19 +82,21 @@ def kick_chat_memmber(update, context):
     print(member_user_id)
 
     if member_user_id > 0:
-        bot.kick_chat_member(chat_id = chat_id, user_id = member_user_id)
+        bot.kick_chat_member(chat_id=chat_id, user_id=member_user_id)
+        pass
     bot.delete_message(chat_id, update.effective_message['message_id'])
     pass
 
 
 start_handler = CommandHandler('start', send_greeting_text)
-kick_handler = CommandHandler('kick', kick_chat_memmber)
+kick_handler = CommandHandler('kick', kick_chat_member)
 help_handler = CommandHandler('help', send_greeting_text)
 
 WAIT_FOR_NAME, WAIT_FOR_ABOUT, WAIT_FOR_SOCIAL, WAIT_FOR_CITY = range(4)
 
 
-def register_button_and_name_handler(update, context):
+@handle_failure()
+def register_button_and_name_handler(update):
     """
     Ask for name
     """
@@ -91,7 +115,8 @@ def register_button_and_name_handler(update, context):
     return WAIT_FOR_NAME
 
 
-def record_name_ask_about(update, context):
+@handle_failure()
+def record_name_ask_about(update):
     text = update.message.text
 
     user = Person.objects.get(tg_id=update.effective_user.id)
@@ -105,11 +130,10 @@ def record_name_ask_about(update, context):
     return WAIT_FOR_ABOUT
 
 
-def record_about_ask_social(update, context):
-    text = update.message.text
-
+@handle_failure()
+def record_about_ask_social(update):
     user = Person.objects.get(tg_id=update.effective_user.id)
-    user.about = text
+    user.about = update.message.text
     user.save()
 
     ask_for_social = BotMessage.objects.get(type=BotMessage.MessageTypes.ASK_FOR_SOCIAL)
@@ -119,7 +143,9 @@ def record_about_ask_social(update, context):
     return WAIT_FOR_SOCIAL
 
 
-def record_social_ask_city(update, context):
+@handle_failure()
+def record_social_ask_city(update):
+    n = 3
     text = update.message.text
 
     user = Person.objects.get(tg_id=update.effective_user.id)
@@ -127,7 +153,6 @@ def record_social_ask_city(update, context):
     user.save()
 
     ask_for_city = BotMessage.objects.get(type=BotMessage.MessageTypes.ASK_FOR_CITY)
-    n = 3
     packed_locations = [AVAILABLE_LOCATIONS[i:i + n] for i in range(0, len(AVAILABLE_LOCATIONS), n)]
     markup = ReplyKeyboardMarkup(packed_locations, resize_keyboard=True, one_time_keyboard=True)
 
@@ -135,9 +160,9 @@ def record_social_ask_city(update, context):
     return WAIT_FOR_CITY
 
 
-def record_city_register_end(update, context):
-    text = update.message.text
-    location = Location.objects.filter(name=text).get()
+@handle_failure()
+def record_city_register_end(update):
+    location = Location.objects.filter(name=update.message.text).get()
 
     user = Person.objects.get(tg_id=update.effective_user.id)
     user.location = location
@@ -155,7 +180,8 @@ def record_city_register_end(update, context):
     return ConversationHandler.END
 
 
-def try_again(update, context):
+@handle_failure()
+def try_again(update):
     update.message.reply_text("Что-то пошло не так, нажмите на кнопку Регистрация снова")
 
 
@@ -185,7 +211,8 @@ reg_conv_handler = ConversationHandler(
 #
 
 
-def set_invite_intent(update, context):
+@handle_failure()
+def set_invite_intent(update):
     person = Person.objects.filter(tg_id=update.effective_user.id).get()
     if not update.effective_user.username:
         username_not_set_text = BotMessage.objects.get(type=BotMessage.MessageTypes.USERNAME_NOT_SET)
@@ -196,6 +223,7 @@ def set_invite_intent(update, context):
     else:
         person.tg_username = update.effective_user.username
         person.save()
+        pass
 
     q = InviteIntent.objects.filter(
         person_id=update.effective_user.id,
@@ -205,15 +233,17 @@ def set_invite_intent(update, context):
     if update.callback_query.data == AGREE_TO_PARTY:
         q.update(is_user_agreed=True)
         reply_text = BotMessage.objects.get(type=BotMessage.MessageTypes.INVITE_CONFIRMED).text
+        pass
     else:
         q.update(is_user_agreed=False)
         reply_text = BotMessage.objects.get(type=BotMessage.MessageTypes.INVITE_DECLINED).text
+        pass
 
     update.effective_message.reply_text(reply_text)
+    pass
 
 
 invite_intent_handler = CallbackQueryHandler(set_invite_intent, pattern=f'^({AGREE_TO_PARTY}|{DECLINE_TO_PARTY})$')
-
 
 #
 # Collect feedback
@@ -222,6 +252,7 @@ invite_intent_handler = CallbackQueryHandler(set_invite_intent, pattern=f'^({AGR
 WAIT_FOR_REASON = range(1)
 
 
+@handle_failure()
 def collect_feedback_handler(update, context):
     data, to_person_id = update.callback_query.data.split('|')
     pm = PersonMeeting.objects.filter(
@@ -242,15 +273,18 @@ def collect_feedback_handler(update, context):
     elif data == FEEDBACK_BAD:
         pm.rate = PersonMeeting.MeetingRate.BAD
         reply_text = BotMessage.objects.get(type=BotMessage.MessageTypes.FEEDBACK_BAD).text
+        pass
     else:
         pm.rate = PersonMeeting.MeetingRate.NOT_MET
         reply_text = BotMessage.objects.get(type=BotMessage.MessageTypes.FEEDBACK_NOT_MET).text
+        pass
 
     pm.save()
     update.effective_message.reply_text(reply_text)
     return WAIT_FOR_REASON
 
 
+@handle_failure()
 def record_feedback_reason(update, context):
     to_person_id = context.user_data['to_person_id']
     pm = PersonMeeting.objects.filter(
