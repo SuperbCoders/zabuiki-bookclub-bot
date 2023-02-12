@@ -10,11 +10,13 @@ from bookclub.celery import app
 from bookclub_bot.bot import bot
 from bookclub_bot.bot_handlers import want_to_party_keyboard, get_user_feedback_keyboard
 from bookclub_bot.models import Person, InviteIntent, BotMessage, PersonMeeting
+from bookclub_bot.utils import handle_failure
 
 logger = get_task_logger(__name__)
 db_logger = logging.getLogger('db_log')
 
 
+@handle_failure()
 def next_weekday(d, weekday):
     days_ahead = weekday - d.weekday()
     if days_ahead <= 0:  # Target day already happened this week
@@ -22,8 +24,9 @@ def next_weekday(d, weekday):
     return d + timedelta(days_ahead)
 
 
+@handle_failure()
 @app.task(name='create_invite_intent', autoretry_for=(Exception,), max_retries=2)
-def create_invite_intent(weekday = 0):
+def create_invite_intent(weekday=0):
     today = date.today()
 
     # if not today.weekday() >= 5:
@@ -69,6 +72,7 @@ def create_invite_intent(weekday = 0):
     return f'[{intent_day}] Создано {len(persons)} запросов на встречу'
 
 
+@handle_failure()
 @app.task(name='send_invite', autoretry_for=(Exception,), max_retries=1)
 def send_invite():
     invite_text = BotMessage.objects.get(type=BotMessage.MessageTypes.INVITE)
@@ -78,8 +82,8 @@ def send_invite():
     while True:
         intents = (
             InviteIntent.objects
-                .filter(is_message_send=False, is_deleted=False)
-                .order_by('person_id')
+            .filter(is_message_send=False, is_deleted=False)
+            .order_by('person_id')
             [:n]
         )
         if not intents.exists():
@@ -117,6 +121,7 @@ def send_invite():
     return f'Разослано {send_cnt} сообщений'
 
 
+@handle_failure()
 @app.task(name='find_pair', autoretry_for=(Exception,), max_retries=1)
 def find_pair():
     # today = date.today()
@@ -184,6 +189,7 @@ def find_pair():
     return f'Составлено {cnt} пар'
 
 
+@handle_failure()
 @app.task(name='send_pair_info', autoretry_for=(Exception,), max_retries=1)
 def send_pair_info():
     msg_template = BotMessage.objects.get(type=BotMessage.MessageTypes.SEND_PAIR_INFO).text
@@ -228,6 +234,7 @@ def send_pair_info():
     db_logger.info(f'Разослано {send_cnt} уведомлений о паре')
 
 
+@handle_failure()
 @app.task(name='send_feedback_collect', autoretry_for=(Exception,), max_retries=1)
 def send_feedback_collect():
     msg_text = BotMessage.objects.get(type=BotMessage.MessageTypes.FEEDBACK_REQUEST).text
@@ -267,6 +274,7 @@ def send_feedback_collect():
     db_logger.info(f'Разослано {send_cnt} запросов о фидбеке')
 
 
+@handle_failure()
 @app.task(name='update_meeting_schedule', autoretry_for=(Exception,), max_retries=1)
 def update_meeting_schedule():
     # check if there any not send invites
