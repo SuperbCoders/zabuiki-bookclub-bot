@@ -22,9 +22,10 @@ class Person(models.Model):
 
     is_blocked = models.BooleanField(default=False)
 
-    meetings = models.ManyToManyField('self', through='PersonMeeting',
-                                           symmetrical=False,
-                                           related_name='person_meeting')
+    meetings = models.ManyToManyField('self',
+                                      through='PersonMeeting',
+                                      symmetrical=False,
+                                      related_name='person_meeting')
 
     class Meta:
         verbose_name = 'Пользователь'
@@ -35,7 +36,6 @@ class Person(models.Model):
 
 
 class BotMessage(models.Model):
-
     class MessageTypes(models.IntegerChoices):
         USER_WELCOME = 0, 'Приветсвие пользователя'
 
@@ -52,14 +52,14 @@ class BotMessage(models.Model):
 
         SEND_PAIR_INFO = 9, 'Информация о встрече'
 
-        USERNAME_NOT_SET = 10, 'Юзернейм не установлен'
+        USERNAME_NOT_SET = 10, 'Имя пользователья не установлен'
 
-        FEEDBACK_GOOD = 11, 'Фидбек, встреча прошла хорошо'
-        FEEDBACK_BAD = 12, 'Фидбек, встреча прошла плохо'
-        FEEDBACK_NOT_MET = 13, 'Фидбек, не встретились'
-        FEEDBACK_REASON_COLLECTED = 14, 'Фидбек, отзыв собран'
+        FEEDBACK_GOOD = 11, 'Обратная связь, встреча прошла хорошо'
+        FEEDBACK_BAD = 12, 'Обратная связь, встреча прошла плохо'
+        FEEDBACK_NOT_MET = 13, 'Обратная связь, не встретились'
+        FEEDBACK_REASON_COLLECTED = 14, 'Обратная связь, отзыв собран'
 
-        FEEDBACK_REQUEST = 15, 'Фидбек, как прошло'
+        FEEDBACK_REQUEST = 15, 'Обратная связь, как прошло'
 
     type = models.IntegerField(choices=MessageTypes.choices, unique=True, primary_key=True)
     text = models.TextField()
